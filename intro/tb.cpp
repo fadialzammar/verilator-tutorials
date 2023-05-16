@@ -1,38 +1,52 @@
 #include <stdlib.h>
 #include <iostream>
 #include <verilated.h>
-#include <verilated_vcd_c.h> // Needed for trace output
+#include <verilated_vcd_c.h>
 #include "Vcounter.h"
 
-#define MAX_TIME 20
-int i = 0;
-
-int main(int argc,char** argv, char** env){
+int main(int argc, char** argv, char** env){
     // Initialize verilated module
     Vcounter *dut = new Vcounter;
 
     // Trace setup
-    Verilated::traceEverOn(true); // enables trace output
-    VerilatedVcdC *m_trace = new VerilatedVcdC; // object to hold trace
-    dut->trace(m_trace,5);
-    m_trace->open("waveform.vcd");
+    Verilated::traceEverOn(true);
+    VerilatedVcdC *vcd = new VerilatedVcdC;
+    dut->trace(vcd,5);
+    vcd->open("waveform.vcd");
+    int i = 0;
 
     // Initialize inputs
     dut->clk = 0;
+    dut->reset = 1;
+
+    // Reset
+    dut->eval();
+    vcd->dump(i);
+
+    dut->reset = 0;
+    dut->clk = 1;
+    i++;
+    dut->eval();
+    vcd->dump(i);
 
     // Run simulation
-    while(i<MAX_TIME) {
-        dut->clk ^= 1;
-        dut->reset = 0;
-        dut->eval();
-        m_trace->dump(i);
+    while(dut->count <= 0xF) {
         printf("Count: %i\n", dut->count);
+
+        dut->clk = 0;
         i++;
+        dut->eval();
+        vcd->dump(i);
+        
+
+        dut->clk = 1;
+        i++;
+        dut->eval();
+        vcd->dump(i);
     }
 
     // Cleanup
-    m_trace->close();
-    dut->final();
+    vcd->close();
     delete dut;
     exit(EXIT_SUCCESS);
 }

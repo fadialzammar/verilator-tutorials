@@ -2,18 +2,18 @@
 #include <iostream>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
-#include "Vcounter.h"
+#include "obj_dir/Vcounter.h"
 
 int main(int argc, char** argv, char** env){
     // Initialize verilated module
     Vcounter *dut = new Vcounter;
 
     // Trace setup
-    Verilated::traceEverOn(true);
-    VerilatedVcdC *vcd = new VerilatedVcdC;
+    Verilated::traceEverOn(true); // enables trace output
+    VerilatedVcdC *vcd = new VerilatedVcdC; // manages trace file
     dut->trace(vcd,5);
     vcd->open("waveform.vcd");
-    int i = 0;
+    int i = 0; // the timestep we are currently on
 
     // Initialize inputs
     dut->clk = 0;
@@ -44,6 +44,8 @@ int main(int argc, char** argv, char** env){
         dut->eval();
         vcd->dump(i);
     }
+
+    dut->final();
 
     // Cleanup
     vcd->close();

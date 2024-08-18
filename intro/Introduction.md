@@ -1,7 +1,6 @@
 ---
 title:  Verilator Introduction
 author: Fadi Alzammar
-date: \today
 geometry: margin=1in
 colorlinks: true
 ---
@@ -28,47 +27,41 @@ Depending on your operating system, there may be some additional steps required 
 
 ### Linux
 
-If you are already on (a reasonably popular distribution of) Linux, great! There's nothing to do for this step.
+These instructions assume you are using Ubuntu. If so, you should be able to follow these instructions without any modification.
 
 ### MacOS
 
-MacOS is almost as easy to get started with. Just install the Homebrew package manager by running the following in Terminal:
+Verilator supports MacOS, but I personally cannot confirm that these steps will all work as expected. If you'd like to try using Verilator natively on MacOS, you can install the Homebrew package manager by running the following in Terminal:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
+From there, you can replace the `apt` installation steps with `brew`. Alternatively, you can install an Ubuntu virtual machine to run these steps in a better supported environment.
+
 ### Windows
 
-If you are on Windows, there is some more work. The easiest way for us to get started is with Windows Subsystem for Linux (WSL), which is essentially a Hyper-V virtual machine with strong integration to Windows.  As long as you are on Windows 10 version 2004 or greater, or Windows 11, the installation is as easy as opening a PowerShell or Command Prompt as administrator and running:
+The easiest way to get started on Windows is with Windows Subsystem for Linux (WSL). As long as you are on Windows 10 version 2004 or greater, or Windows 11, the installation is as easy as opening a PowerShell or Command Prompt as administrator and running:
 
 ```powershell
-wsl --install
+wsl --install -d Ubuntu-24.04
 ```
 
-By default, this will install Ubuntu. If you would like to install a different distribution, you can instead run:
+You'll then be prompted to restart your PC, after which you can access the VM by searching for "Ubuntu", or by opening it as a new tab in the "Terminal" application, where it should automatically be added as a dropdown option. You may need to restart the Terminal for this to appear.
 
-```powershell
-wsl --install -d <Distribution Name>
-```
-
-You'll then be prompted to restart your PC, after which you can access the VM by searching for "Ubuntu" (or whichever distribution you chose), or by opening it as a new tab in the wonderful, modern "Terminal" application, where it should automatically be added as a dropdown option.
+Ommitting the `-d` flag and running `wsl --install` with default options will, as of the time of writing, install Ubuntu 22.04. This, or other popular distributions, will work but may require additional steps, as outlined in the following step.
 
 ## Verilator
 
-Verilator can easily be installed from most package managers. For Debain/Ubuntu-based operating systems, this can be done with: 
+For this guide, most versions of Verilator should work fine. Advanced functionality, however, such as using the [Cocotb test framework](Cocotb.md), will require at least version 5.006. You can check [Repology](https://repology.org/project/verilator/versions) to see what version is included in your distribution's package manager. As of writing, Ubuntu 23.04 and above satisfies this requirement, but older versions will require building from source.
+
+If the version included in your distribution's repository satisfies your needs, you can install Verilator with:
 
 ```sh
 sudo apt install verilator
 ```
 
-On MacOS, you will instead use Homebrew:
-
-```sh
-brew install verilator
-```
-
-If you have specific requirements beyond the scope of these guides, or you are not on a distribution which Verilator is packaged for, you may need to follow instructions on Verilator's [installation page](https://veripool.org/guide/latest/install.html) to build from source.l
+If you are on a distribution which does not have a suitible version of Verilator packaged, follow the [Git Quick Install](https://verilator.org/guide/latest/install.html#git-quick-install) instructions on Verilator's installation page to build from source.
 
 ## GTKWave
 
@@ -82,7 +75,7 @@ sudo apt install gtkwave
 
 I will also be including instructions to integrate Verilator into Visual Studio Code, a popular code editor. I'd recommend installing this directly from [their website](https://code.visualstudio.com/) for more frequent updates than a package manager.
 
-If you are using WSL, you can install it on Windows and then add the [WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl). From there, you can run `code <file.txt>` in WSL on any file you wish to edit to launch a connection from the . The first time you do this, it will automatically install the required package in your WSL distribution.
+If you are using WSL, you can install VSCode on Windows and add the [WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl). From there, you can run `code <file.txt>` in WSL on any file you wish to edit to launch a connection from WSL to the VSCode instance in Windows. The first time you do this, it will automatically install the required package in your WSL distribution.
 
 ### Configuration
 
@@ -97,6 +90,12 @@ Add Verilator to the "Include path". If you installed Verilator with `apt`, you 
 
 ```
 /usr/share/verilator/include
+```
+
+If you followed the Git Quick Install instructions to build from source, you will instead want to add:
+
+```
+/usr/local/share/verilator/include
 ```
 
 Your setting should now look something like this:
@@ -135,18 +134,18 @@ Now for the actual Verilator part. I will include my full testbench below, then 
 #include <iostream>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
-#include "Vcounter.h"
+#include "obj_dir/Vcounter.h"
 
 int main(int argc, char** argv, char** env){
     // Initialize verilated module
     Vcounter *dut = new Vcounter;
 
     // Trace setup
-    Verilated::traceEverOn(true);
-    VerilatedVcdC *vcd = new VerilatedVcdC;
+    Verilated::traceEverOn(true); // enables trace output
+    VerilatedVcdC *vcd = new VerilatedVcdC; // manages trace file
     dut->trace(vcd,5);
     vcd->open("waveform.vcd");
-    int i = 0;
+    int i = 0; // the timestep we are currently on
 
     // Initialize inputs
     dut->clk = 0;
@@ -177,7 +176,9 @@ int main(int argc, char** argv, char** env){
         dut->eval();
         vcd->dump(i);
     }
-    
+
+    dut->final();
+
     // Cleanup
     vcd->close();
     delete dut;
@@ -192,7 +193,7 @@ int main(int argc, char** argv, char** env){
 #include <iostream>
 #include <verilated.h>
 #include <verilated_vcd_c.h>
-#include "Vcounter.h"
+#include "obj_dir/Vcounter.h"
 ```
 
 - `stdlib.h` and `iostream` are standard C++ libraries for general functions and input-output operations
@@ -208,18 +209,18 @@ int main(int argc, char** argv, char** env){
 Vcounter *dut = new Vcounter;
 ```
 
-First, we create an object that will act as our DUT (device under test), or in other words, the module we are simulating. The `Vcounter.h` defines a `Vcounter` type that has all the inputs and outputs of our hardware module. `dut` is a pointer to an object of this type.
+First, we create an object that will act as our DUT (device under test), or in other words, the module we are simulating. The `Vcounter.h` defines a `Vcounter` class that has all the inputs and outputs of our hardware module. `dut` is a pointer to an object of this class.
 
 ```cpp
 // Trace setup
-Verilated::traceEverOn(true);
-VerilatedVcdC *vcd = new VerilatedVcdC;
+Verilated::traceEverOn(true); // enables trace output
+VerilatedVcdC *vcd = new VerilatedVcdC; // manages trace file
 dut->trace(vcd,5);
 vcd->open("waveform.vcd");
-int i = 0;
+int i = 0; // the timestep we are currently on
 ```
 
-`traceEverOn` is used to enable VCD trace writing, and `vcd` points to an object which stores the trace information. The function `trace(vcd,5)` associates our trace data to the module, with `5` being the maximum signal depth that will be recorded. We open `waveform.vcd`, the actual file that the trace data will be written to, and finally, `i` is the current timestep we are on in the simulation. Every time we advance in time, `i` must be incremented appropriately.
+`traceEverOn` is used to enable VCD trace writing, and `vcd` points to an object which handles writing to the trace file. The function `trace(vcd,5)` associates our trace data to the module, with `5` being the maximum signal depth, or number of modules deep from the top module, that will be recorded. We open `waveform.vcd`, the actual file that the trace data will be written to, and finally, `i` is the current timestep we are on in the simulation. Every time we advance in time, `i` must be incremented appropriately.
 
 ### Initialization
 
@@ -247,9 +248,9 @@ dut->eval();
 vcd->dump(i);
 ```
 
-Because we initialized `reset` high, our module enters reset immediately. The state of our module, `dut` is evaluated with `eval()`, and we dump this information into `vcd`, recording it at timestep `i` (which is currently 0), with `dump(i)`.
+Because we initialized `reset` high, our module enters reset immediately. The state of our module, `dut` is evaluated with `eval()`, and we dump this information into `vcd`, recording it at timestep `i` (which is currently 0) with `dump(i)`.
 
-At the next clock edge, we set `reset` low and `clk` high, `i` is then incremented, so that the next `dump()` will save to the next timestep.
+At the next clock edge, we set `reset` low and `clk` high. `i` is then incremented, so that the next `dump()` will save to the next timestep.
 
 ### Simulation
 
@@ -268,9 +269,13 @@ while(dut->count <= 0xF) {
 	vcd->dump(i);
 	i++;
 }
+
+dut->final();
 ```
 
 The fun part! This simulation is running until our `count` output hits `0xF`, or 15. Each clock cycle, the current cycle is printed to the console.
+
+The `dut->final()` command is ran at the end to run any SystemVerilog `final` blocks. Our counter module does not have any, so in this case it won't do anything meaningful.
 
 ### Cleanup
 
@@ -325,13 +330,14 @@ Don't worry, this is normal! Expand the line labelled "TOP" to see our module, a
 
 ![GTKWave signal list](images/gtkwave_signals.png)
 
-To view a signal, just drag it to the black area on the right. You can select multiple signals by holding Ctrl while you click on them, or alternatively click on one signal, hold Shift, and click another signal to select all signals between them. If you are doing this, make sure to continue holding Ctrl or Shift while dragging the signals.
+To view a signal, you can double click it, drag it to the Signals box, or select it and click Insert. You can select multiple signals by holding Ctrl while you click on them, or click on one signal, hold Shift, and click another signal to select all signals between them.
 
 ![GTKWave waveforms](images/gtkwave_waveforms.png)
 
 From here, you can use the buttons at the top to zoom in/out or scroll between edges.
 
-Congrats, you've successfully Verilated a module, simulated it, and viewed its signals as waveform! Next, we will look at [Verilating the OTTER](OTTER.md).
+Congrats, you've successfully Verilated a module, simulated it, and viewed its signals as a waveform! Next, we will look at [Verilating the OTTER](OTTER.md).
 
+A `Makefile` is provided to automate the steps outlined here, which can be run with the `make` command in this directory. Part of this file is for generating a PDF of this tutorial and is not related to the Verilation steps.
 
-[^1]: Verilator can also convert to SystemC, but that will be outside the scope of these guides.
+[^1]: Verilator can also convert to SystemC, but that is outside the scope of these guides.

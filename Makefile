@@ -4,12 +4,12 @@
 PDFDIR = pdfs/
 LESSONS = $(filter-out $(PDFDIR), $(wildcard */))
 
-.PHONY: docs clean-docs $(LESSONS)
+.PHONY: pdfs clean $(LESSONS)
 
-docs: $(LESSONS)
+pdfs: $(LESSONS)
 
 $(LESSONS):
-	$(MAKE) -C $@ docs
+	$(MAKE) -C $@ -f pdf.mk
 
-clean-docs:
+clean:
 	rm -r $(PDFDIR)

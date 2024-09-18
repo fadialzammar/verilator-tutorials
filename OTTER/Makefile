@@ -1,10 +1,12 @@
 MODULE = OTTER_Wrapper
-MODULE_VERILOG = src/OTTER_Wrapper.sv
 TESTBENCH = otter_tb.cpp
 # INCLUDES = -I./src -I./src/peripherals
 INCLUDES = -I./src
-VFLAGS = -Wall --trace --exe --build -cc --Wno-fatal $(INCLUDES)
+PROGRAM ?= mul
+PARAMS = -GMEM_FILE='"mem/$(PROGRAM).mem"'
+VFLAGS = -Wall --trace --exe --build -cc --Wno-fatal $(INCLUDES) $(PARAMS)
 WAVEFORM = waveform.vcd
+SRC_FILES = $(wildcard src/*.sv mem/*.mem)
 
 .PHONY: all clean
 
@@ -12,7 +14,7 @@ all: $(WAVEFORM)
 $(WAVEFORM): obj_dir/V$(MODULE)
 	./obj_dir/V$(MODULE)
 
-obj_dir/V$(MODULE): $(TESTBENCH) $(MODULE_VERILOG)
+obj_dir/V$(MODULE): $(TESTBENCH) $(SRC_FILES)
 	verilator $(VFLAGS) $(TESTBENCH) $(MODULE).sv
 
 clean:

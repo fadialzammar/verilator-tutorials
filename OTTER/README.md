@@ -56,3 +56,49 @@ make: *** [Makefile:16: obj_dir/VOTTER_Wrapper] Error 1
 Of course, the proper solution would be to address each of the warnings. Many of these warnings give important hints to design bugs that may exist. If there is a warning that truely cannot be resolved, there are ways to block off checking for that specific warning in a given block of code.
 
 Realistically, getting rid of every warning every time may not be reasonable, especially for warnings over stylistic choices or for code that has already been thoroughly tested which you do not want to modify. In such cases, adding the `--Wno-fatal` flag to our command will make sure that warnings are not fatal to the Verilation process.
+
+## Parameterizing the `.mem` file (Optional)
+To make testing different programs on the OTTER easier, we can avoid navigating to the memory module of the design to change the file name by turning it into a parameter, and instead specify it as an arguement in our `verilator` command.
+
+Verilator can only change top-level parameters, so you'll need to pass this all the way from the memory module to the wrapper. In my OTTER implementation, that meant adding the following line:
+
+```sv
+parameter string MEM_FILE = ""
+```
+
+in the module definitions of my `bram_dualport.sv`, `OTTER_CPU.sv`, and `OTTER_Wrapper.sv` files. Your file names, of course, may vary. Thinking about the parameter getting set at the top level, this then needs to float back down through each instantiation. My instantiation of `OTTER_CPU` inside of `OTTER_Wrapper`, for example, looks like:
+
+<!-- #TODO: try ```cpp -->
+```sv
+OTTER_CPU #(.MEM_FILE(MEM_FILE)) MCU([signals]);
+```
+
+Similarly, the parameter will need to be passed down inside the `MCU` ot the `bram_dualport` module instantiation.
+
+With this all done, we can set a value with the `-G` flag in Verilator, in the format `-G<name>=<value>`. Similarly to the `-I` flag, there is so space between the `G` and the parameter name. Putting everything together, this is what our Verilator command should look for a `mul.mem` memory file:
+
+```
+verilator -Wall --trace --exe --build -cc --Wno-fatal -I./src -GMEM_FILE='"mul.mem"' otter_tb.cpp OTTER_Wrapper.sv
+```
+
+If you're paying close attention, there's a good chance you're wondering why there's a combination of single and double quotes around `mul.mem`. We ultimately want `"mul.mem"` to be the exact value set in our SystemVerilog code, but with just a single set of quotes, the shell will parse this and turn it into `mul.mem` as an unquoted string. To avoid this, a second set of single quotes is added. The shell will parse and remove these, leaving the inner set of double quotes intact.
+
+If you're running Verilator with a Makefile, which I'd highly recommend, we can take things *another* step further and set it as an environment variable. In my example [Makefile](./Makefile), I've included these defines:
+
+```make
+PROGRAM ?= mul
+PARAMS = -GMEM_FILE='"mem/$(PROGRAM).mem"'
+```
+
+Because of the `?=` assignment, an existing environment variable will take precendent over this assignment. In the terminal, we can set this environment variable for just our `make` command by running it as
+
+```sh
+PROGRAM=matmul make
+```
+
+As a final note, the parameter must be set here during the Verilating process, not in our own C++ testbench. This is because the Verilated C++ model of our hardware depends on this parameter and cannot be built without it. Getting creative with the Makefile parameterization can still allow you to run different testbenches for different memory files without needing to change any code.
+
+# TODO: 
+ - changing waveform signal to int
+ - reading/asserting internal values
+ - running several unit tests together

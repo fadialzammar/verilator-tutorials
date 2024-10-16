@@ -5,18 +5,22 @@ geometry: margin=1in
 colorlinks: true
 ---
 
+# TODO: Remove cocotb
+# TODO: Investigate needing to `unset VERILATOR_ROOT`
+
 # What is Verilator?
 
-Verilator is a free, open-source tool for converting Verilog and SystemVerilog code to a cycle-accurate C++[^1] model. This model can then be run to simulate the behavior of our circuit. Simulating this way, as opposed to the traditional timestep-based approach directly from HDL in tools such as Xilinx Vivado, has several advantages:
+Verilator is a free, open-source tool for converting Verilog and SystemVerilog code to a cycle-accurate C++ model. This model is a software equivalent to the hardware RTL code, allowing us to run testbenches written in C++ to simulate the behavior of our circuit. Using a software model is a different approach to simulating compared to traditional testbenches used in simulators like Xilinx Xsim, which, like the hardware RTL, would also be written in an RTL itself. 
+
+Simulating with Verilator has several advantages:
 
 - The simulation only needs to update each signal when there is a change to it, rather than every timestep. This means that simulations run *much* faster.
-- We have the full power of C++ available to us. Though waveforms are definitely useful, we can also port our data into any program we can make to analyze the data, including even a [VGA simulator](VGA.md)!
-	- Similarly, programming our testbenches in C++ allows us to easily complex scenarios that would be a huge pain to do in (System)Verilog.
-- It is easy to analyze [code coverage](Extras.md#Code-coverage), showing you what parts of your HDL are most commonly used (if at all!). This is a great process for determining where you should place your focus when trying to improve the performance of a circuit.
+- We have the full power of C++ available to us. Though waveforms are definitely useful, we can also port our data into more powerful programs analyze the data, including even a [VGA simulator](../VGA_Simulator/README.md)!
+- It can be used to analyze [code coverage](../Extras/README.md#Code-coverage), showing you what parts of your HDL are most commonly used (if at all!). This is a great process for determining where you should place your focus when trying to improve the performance of a circuit.
 
 Unfortunately, this does not come without downsides. The two main ones are:
 
-- Only synthesize Verilog can be simulated, or in other words, Verilog that can actually be turned into hardware. This means that delay statements like `#10` and similar software-only constructs will not work.
+- Only synthesizable Verilog can be simulated, or in other words, Verilog that can actually be turned into hardware. This means that delay statements like `#10` and similar software-only constructs will not work.
 - Verilator is a two-state simulator. Many traditional simulators, such as the one in Xilinx Vivado, are 4-state. Both, of course, support 0 and 1 states for each bit, but only the latter supports unknown (X) and high-impedance (Z) states.
 
 # Installation
@@ -31,7 +35,7 @@ These instructions assume you are using Ubuntu. If so, you should be able to fol
 
 ### MacOS
 
-Verilator supports MacOS, but I personally cannot confirm that these steps will all work as expected. If you'd like to try using Verilator natively on MacOS, you can install the Homebrew package manager by running the following in Terminal:
+Verilator supports macOS, but I personally cannot confirm that these steps will all work as expected. If you'd like to try using Verilator natively on macOS, you can install the Homebrew package manager by running the following in Terminal:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -49,11 +53,11 @@ wsl --install -d Ubuntu-24.04
 
 You'll then be prompted to restart your PC, after which you can access the VM by searching for "Ubuntu", or by opening it as a new tab in the "Terminal" application, where it should automatically be added as a dropdown option. You may need to restart the Terminal for this to appear.
 
-Ommitting the `-d` flag and running `wsl --install` with default options will, as of the time of writing, install Ubuntu 22.04. This, or other popular distributions, will work but may require additional steps, as outlined in the following step.
+Omitting the `-d` flag and running `wsl --install` with default options will, as of the time of writing, install Ubuntu 22.04. This, or other popular distributions, will work but may require additional steps, as outlined in the following step.
 
 ## Verilator
 
-For this guide, most versions of Verilator should work fine. Advanced functionality, however, such as using the [Cocotb test framework](Cocotb.md), will require at least version 5.006. You can check [Repology](https://repology.org/project/verilator/versions) to see what version is included in your distribution's package manager. As of writing, Ubuntu 23.04 and above satisfies this requirement, but older versions will require building from source.
+For this guide, most versions of Verilator should work fine. Advanced functionality, however, such as using the [Cocotb test framework](../Cocotb/README.md), will require at least version 5.006. You can check [Repology](https://repology.org/project/verilator/versions) to see what version is included in your distribution's package manager. As of writing, Ubuntu 23.04 and above satisfies this requirement, but older versions will require building from source.
 
 If the version included in your distribution's repository satisfies your needs, you can install Verilator with:
 
@@ -61,7 +65,7 @@ If the version included in your distribution's repository satisfies your needs, 
 sudo apt install verilator
 ```
 
-If you are on a distribution which does not have a suitible version of Verilator packaged, follow the [Git Quick Install](https://verilator.org/guide/latest/install.html#git-quick-install) instructions on Verilator's installation page to build from source.
+If you are on a distribution which does not have a suitable version of Verilator packaged, follow the [Git Quick Install](https://verilator.org/guide/latest/install.html#git-quick-install) instructions on Verilator's installation page to build from source.
 
 ## GTKWave
 
@@ -75,16 +79,16 @@ sudo apt install gtkwave
 
 I will also be including instructions to integrate Verilator into Visual Studio Code, a popular code editor. I'd recommend installing this directly from [their website](https://code.visualstudio.com/) for more frequent updates than a package manager.
 
-If you are using WSL, you can install VSCode on Windows and add the [WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl). From there, you can run `code <file.txt>` in WSL on any file you wish to edit to launch a connection from WSL to the VSCode instance in Windows. The first time you do this, it will automatically install the required package in your WSL distribution.
+If you are using WSL, you can install VSCode on Windows and add the [WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl). From there, you can run `code <file.txt>` in WSL on any file you wish to edit to launch a connection from WSL to the VSCode instance on Windows. The first time you do this, it will automatically install the required package in your WSL distribution.
 
 ### Configuration
 
 For an optimal coding experience, install the [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools). Then, so that we can see Verilator constructs and functions in IntelliSense, add the Verilator header to the extension's include path:
 
-1. Open the Command Pallete by pressing Ctrl+Shift+P
+1. Open the Command Palette by pressing Ctrl+Shift+P
 2. Begin searching for "Edit Configurations" until you can click the following option:
 
-   ![VSCode command pallete](images/vscode_cpp_config.png)
+   ![VSCode command palette](images/vscode_cpp_config.png)
 
 Add Verilator to the "Include path". If you installed Verilator with `apt`, you will want to add the following directory:
 
@@ -217,10 +221,14 @@ Verilated::traceEverOn(true); // enables trace output
 VerilatedVcdC *vcd = new VerilatedVcdC; // manages trace file
 dut->trace(vcd,5);
 vcd->open("waveform.vcd");
-int i = 0; // the timestep we are currently on
 ```
 
-`traceEverOn` is used to enable VCD trace writing, and `vcd` points to an object which handles writing to the trace file. The function `trace(vcd,5)` associates our trace data to the module, with `5` being the maximum signal depth, or number of modules deep from the top module, that will be recorded. We open `waveform.vcd`, the actual file that the trace data will be written to, and finally, `i` is the current timestep we are on in the simulation. Every time we advance in time, `i` must be incremented appropriately.
+`traceEverOn` is used to enable VCD trace writing, and `vcd` points to an object which handles writing to the trace file. A VCD trace is a file containing the waveforms of the signals in the hardware, which is usually shown to you when running a simulation. The function `trace(vcd,5)` associates our trace data to the module, with `5` being the maximum signal depth, or number of modules deep from the top module, that will be recorded. We open `waveform.vcd`, the actual file that the trace data will be written to.
+
+```cpp
+int i = 0; // the timestep we are currently on
+```
+In a Verilog testbench, it is common to use delay statements to create a clock signal, which is then used to drive the timing of the DUT. We'll still need to create the same clock signals, but we don't have the luxury of hardware parallelism that exists in RTL. Instead of creating an `always` block which runs this clock independently, we'll need to keep track of what timestep we are on, stored here as `i`, and update the clocks accordingly. Similarly, we will also use this to update our VCD file. Each increase in the timestep, or increment of `i`, can be though of as a `#1` delay being performed in a Verilog testbench.
 
 ### Initialization
 
@@ -275,7 +283,7 @@ dut->final();
 
 The fun part! This simulation is running until our `count` output hits `0xF`, or 15. Each clock cycle, the current cycle is printed to the console.
 
-The `dut->final()` command is ran at the end to run any SystemVerilog `final` blocks. Our counter module does not have any, so in this case it won't do anything meaningful.
+The `dut->final()` command is run at the end to run any SystemVerilog `final` blocks. Our counter module does not have any, so in this case it won't do anything meaningful.
 
 ### Cleanup
 
@@ -303,6 +311,8 @@ Breaking it down:
 - `--exe` links our C++ testbench to the Verilog code
 - `--build` automatically builds the new C++ model that Verilator generates
 - `--cc` specifies that we are using C++
+- `tb.cpp` is the name of our testbench
+- `counter.sv` is the name of our SystemVerilog module
 
 After those flags, you just need the name of your C++ testbench and the top-level Verilog module. Successfully running this command should result in an `obj_dir` directory being created, which contains the C++ model Verilator generated from our Verilog code and an executable of our simulation.
 
@@ -330,14 +340,12 @@ Don't worry, this is normal! Expand the line labelled "TOP" to see our module, a
 
 ![GTKWave signal list](images/gtkwave_signals.png)
 
-To view a signal, you can double click it, drag it to the Signals box, or select it and click Insert. You can select multiple signals by holding Ctrl while you click on them, or click on one signal, hold Shift, and click another signal to select all signals between them.
+To view a signal, you can double-click it, drag it to the Signals box, or select it and click Insert. You can select multiple signals by holding Ctrl while you click on them, or click on one signal, hold Shift, and click another signal to select all signals between them.
 
 ![GTKWave waveforms](images/gtkwave_waveforms.png)
 
 From here, you can use the buttons at the top to zoom in/out or scroll between edges.
 
-Congrats, you've successfully Verilated a module, simulated it, and viewed its signals as a waveform! Next, we will look at [Verilating the OTTER](OTTER.md).
+Congrats, you've successfully Verilated a module, simulated it, and viewed its signals as a waveform! Next, we will look at [Verilating the OTTER](../OTTER/README.md).
 
-A `Makefile` is provided to automate the steps outlined here, which can be run with the `make` command in this directory. Part of this file is for generating a PDF of this tutorial and is not related to the Verilation steps.
-
-[^1]: Verilator can also convert to SystemC, but that is outside the scope of these guides.
+A `Makefile` is provided to automate the steps outlined here, which can be run with the `make` command in this directory. Part of this file is for generating a PDF of this tutorial and is not related to the verilating steps.

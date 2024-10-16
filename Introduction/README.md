@@ -298,23 +298,38 @@ Finally, we just need to close the VCD file we opened, clear the memory we alloc
 
 ## Simulating
 
-To "verilate" our model, run:
+There are two steps required to simulate our SystemVerilog code with the C++ testbench we created: we need to "verilate" the RTL, or convert it to a C++ model, and we need to compile the testbench.
+
+This can be done in two separate commands, which will be explained first, or a single one which combines the two. To verilate our RTL, we can run:
+
+```sh
+verilator -Wall --trace -cc counter.sv --exe tb.cpp
+```
+
+Let's explain each part:
+
+- `-Wall` enables all warnings
+- `--trace` enables Verilator to dump our waveform data to a VCD
+- `--cc` specifies that we are using C++
+- `counter.sv` is the name of our SystemVerilog module
+- `--exe` adds our C++ testbench to the Makefile used in the next step
+- `tb.cpp` is the name of our testbench
+
+Successfully running this command should result in an `obj_dir` directory being created, which contains the C++ model Verilator generated from our SystemVerilog code.
+
+Next, to compile the testbench, we'll run a Makefile that the previous step created. This essentially just runs GCC, as our testbench is just a regular C++ file.
+
+```sh
+make -C obj_dir -f Vcounter.mk Vcounter
+```
+
+Thankfully, Verilator lets us combine both of the previous commands into a single one:
 
 ```sh
 verilator -Wall --trace --exe --build -cc tb.cpp counter.sv
 ```
 
-Breaking it down:
-
-- `-Wall` enables all warnings
-- `--trace` enables Verilator to dump our waveform data to a VCD
-- `--exe` links our C++ testbench to the Verilog code
-- `--build` automatically builds the new C++ model that Verilator generates
-- `--cc` specifies that we are using C++
-- `tb.cpp` is the name of our testbench
-- `counter.sv` is the name of our SystemVerilog module
-
-After those flags, you just need the name of your C++ testbench and the top-level Verilog module. Successfully running this command should result in an `obj_dir` directory being created, which contains the C++ model Verilator generated from our Verilog code and an executable of our simulation.
+This lets us specify both the RTL and testbench files, and the added `--build` argument automatically runs the Makefile to build our testbench.
 
 Finally, to run the simulation, we just need to run the aforementioned executable:
 
@@ -322,7 +337,7 @@ Finally, to run the simulation, we just need to run the aforementioned executabl
 ./obj_dir/Vcounter
 ```
 
-If all went well, you should see counts 1-15 printed to the console, and you should now have a file `waveform.vcd` in the folder you ran this. 
+If all went well, you should see counts 1-15 printed to the console, and you should now have a file `waveform.vcd` in the folder you ran this.
 
 ## Viewing the Waveform
 

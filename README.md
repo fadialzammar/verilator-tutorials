@@ -8,8 +8,8 @@ The OTTER MCU is a RISC-V processor developed by the late Dr. Joseph Callenes-Sl
 
 These tutorials are intended to be followed in the following order:
 
-1. [Verilator Introduction](Introduction/README.md)
-2. [Using Cocotb](Cocotb/README.md)
+1. [Verilator Introduction](/Introduction/README.md)
+2. [The OTTER MCU](/OTTER/README.md)
 3. 
 
 ## Building

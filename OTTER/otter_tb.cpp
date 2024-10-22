@@ -20,7 +20,6 @@ int main(int argc, char** argv, char** env){
 
     // Trace setup
     Verilated::traceEverOn(true); // enables trace output
-    // std::print(Verilated::time())
     VerilatedVcdC *vcd = new VerilatedVcdC; // object to hold trace
     dut->trace(vcd,5);
     vcd->open("waveform.vcd");
@@ -32,7 +31,7 @@ int main(int argc, char** argv, char** env){
     dut->BTNL = 0;
 
     // Reset
-    dut->BTNC = 1; // BTNC tied to OTTER_MCU's RESET in OTTER_Wrapper
+    dut->BTNC = 1; // BTNC is tied to OTTER_MCU's RESET in OTTER_Wrapper
     time = tick(dut, vcd, time);
     time = tick(dut, vcd, time);
     dut->BTNC = 0;
@@ -41,7 +40,12 @@ int main(int argc, char** argv, char** env){
         time = tick(dut, vcd, time);
     }
     
+    // Read out register value
     cout << "Reg s0: " << dut->rootp->OTTER_Wrapper__DOT__MCU__DOT__RF__DOT__RF[8] << endl;
+
+    // Assert register value
+    assert(dut->rootp->OTTER_Wrapper__DOT__MCU__DOT__RF__DOT__RF[8] == 5000);
+
     dut->final();
 
     // Cleanup

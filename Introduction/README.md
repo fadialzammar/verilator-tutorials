@@ -5,12 +5,9 @@ geometry: margin=1in
 colorlinks: true
 ---
 
-# TODO: Remove cocotb
-# TODO: Investigate needing to `unset VERILATOR_ROOT`
-
 # What is Verilator?
 
-Verilator is a free, open-source tool for converting Verilog and SystemVerilog code to a cycle-accurate C++ model. This model is a software equivalent to the hardware RTL code, allowing us to run testbenches written in C++ to simulate the behavior of our circuit. Using a software model is a different approach to simulating compared to traditional testbenches used in simulators like Xilinx Xsim, which, like the hardware RTL, would also be written in an RTL itself. 
+Verilator is a free, open-source tool for converting Verilog and SystemVerilog code to a cycle-accurate C++ model. This model is a software equivalent to the hardware RTL code, allowing us to run testbenches written in C++ to simulate the behavior of our circuit. Using a software model is a different approach to simulating compared to traditional testbenches used in simulators like Xilinx Xsim, which, like the hardware RTL, would also be written in an RTL itself.
 
 Simulating with Verilator has several advantages:
 
@@ -41,7 +38,7 @@ Verilator supports macOS, but I personally cannot confirm that these steps will 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-From there, you can replace the `apt` installation steps with `brew`. Alternatively, you can install an Ubuntu virtual machine to run these steps in a better supported environment.
+From there, you can replace the `apt` installation steps with `brew`. Alternatively, you can install an Ubuntu virtual machine for a more well-supported environment.
 
 ### Windows
 
@@ -363,4 +360,4 @@ From here, you can use the buttons at the top to zoom in/out or scroll between e
 
 Congrats, you've successfully Verilated a module, simulated it, and viewed its signals as a waveform! Next, we will look at [Verilating the OTTER](../OTTER/README.md).
 
-A `Makefile` is provided to automate the steps outlined here, which can be run with the `make` command in this directory. Part of this file is for generating a PDF of this tutorial and is not related to the verilating steps.
+A `Makefile` is provided to automate the steps outlined here, which can be run with the `make` command in this directory.

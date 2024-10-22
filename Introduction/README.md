@@ -20,65 +20,49 @@ Unfortunately, this does not come without downsides. The two main ones are:
 - Only synthesizable Verilog can be simulated, or in other words, Verilog that can actually be turned into hardware. This means that delay statements like `#10` and similar software-only constructs will not work.
 - Verilator is a two-state simulator. Many traditional simulators, such as the one in Xilinx Vivado, are 4-state. Both, of course, support 0 and 1 states for each bit, but only the latter supports unknown (X) and high-impedance (Z) states.
 
-# Installation
+## Installation
 
-## Operating system preparation
-
-Depending on your operating system, there may be some additional steps required to run Verilator.
+We'll need to install both Verilator and GTKWave, an open-source waveform viewer. Exact installation steps will depend on your operating system.
 
 ### Linux
 
-These instructions assume you are using Ubuntu. If so, you should be able to follow these instructions without any modification.
+Linux operating systems have the best support for these tools. The easiest way to get them is with your package manager.
+
+```sh
+sudo apt install verilator gtkwave
+```
 
 ### MacOS
 
-Verilator supports macOS, but I personally cannot confirm that these steps will all work as expected. If you'd like to try using Verilator natively on macOS, you can install the Homebrew package manager by running the following in Terminal:
+Verilator and GTKWave support macOS, but I haven't tested them myself there. If you'd like to try using Verilator natively on macOS, you can install the Homebrew package manager to then install Verilator and GTKWave:
 
 ```sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install verilator
+brew install --cask gtkwave
 ```
 
-From there, you can replace the `apt` installation steps with `brew`. Alternatively, you can install an Ubuntu virtual machine for a more well-supported environment.
+Alternatively, you can install an Ubuntu or other Linux virtual machine for better support.
 
 ### Windows
 
-The easiest way to get started on Windows is with Windows Subsystem for Linux (WSL). As long as you are on Windows 10 version 2004 or greater, or Windows 11, the installation is as easy as opening a PowerShell or Command Prompt as administrator and running:
+The easiest way to get started on Windows is with Windows Subsystem for Linux (WSL). On Windows 11, the installation is as easy as opening a PowerShell as administrator and running:
 
 ```powershell
-wsl --install -d Ubuntu-24.04
+wsl --install -d Ubuntu
 ```
 
 You'll then be prompted to restart your PC, after which you can access the VM by searching for "Ubuntu", or by opening it as a new tab in the "Terminal" application, where it should automatically be added as a dropdown option. You may need to restart the Terminal for this to appear.
 
-Omitting the `-d` flag and running `wsl --install` with default options will, as of the time of writing, install Ubuntu 22.04. This, or other popular distributions, will work but may require additional steps, as outlined in the following step.
+From here, you can follow the Linux instructions.
 
-## Verilator
-
-For this guide, most versions of Verilator should work fine. Advanced functionality, however, such as using the [Cocotb test framework](../Cocotb/README.md), will require at least version 5.006. You can check [Repology](https://repology.org/project/verilator/versions) to see what version is included in your distribution's package manager. As of writing, Ubuntu 23.04 and above satisfies this requirement, but older versions will require building from source.
-
-If the version included in your distribution's repository satisfies your needs, you can install Verilator with:
-
-```sh
-sudo apt install verilator
-```
-
-If you are on a distribution which does not have a suitable version of Verilator packaged, follow the [Git Quick Install](https://verilator.org/guide/latest/install.html#git-quick-install) instructions on Verilator's installation page to build from source.
-
-## GTKWave
-
-In addition to Verilator, we will be using GTKWave, an open-source waveform viewer, after running our simulations. Similarly, it can be installed with:
-
-```sh
-sudo apt install gtkwave
-```
-
-## Visual Studio Code
+### Visual Studio Code
 
 I will also be including instructions to integrate Verilator into Visual Studio Code, a popular code editor. I'd recommend installing this directly from [their website](https://code.visualstudio.com/) for more frequent updates than a package manager.
 
 If you are using WSL, you can install VSCode on Windows and add the [WSL extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl). From there, you can run `code <file.txt>` in WSL on any file you wish to edit to launch a connection from WSL to the VSCode instance on Windows. The first time you do this, it will automatically install the required package in your WSL distribution.
 
-### Configuration
+#### Configuration
 
 For an optimal coding experience, install the [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools). Then, so that we can see Verilator constructs and functions in IntelliSense, add the Verilator header to the extension's include path:
 
@@ -89,13 +73,13 @@ For an optimal coding experience, install the [C/C++ extension](https://marketpl
 
 Add Verilator to the "Include path". If you installed Verilator with `apt`, you will want to add the following directory:
 
-```
+```sh
 /usr/share/verilator/include
 ```
 
 If you followed the Git Quick Install instructions to build from source, you will instead want to add:
 
-```
+```sh
 /usr/local/share/verilator/include
 ```
 
@@ -103,9 +87,9 @@ Your setting should now look something like this:
 
 ![VSCode include path](images/vscode_include_path.png)
 
-# Our First Verilated Module
+## Our First Verilated Module
 
-## The HDL
+### The HDL
 
 As a simple example, let's begin with a simple counter. Below is the SystemVerilog code for the module.
 
@@ -126,7 +110,7 @@ module counter #(
 endmodule
 ```
 
-## C++ Testbench
+### C++ Testbench
 
 Now for the actual Verilator part. I will include my full testbench below, then deep-dive into what each part is doing.
 
@@ -187,7 +171,7 @@ int main(int argc, char** argv, char** env){
 }
 ```
 
-### Headers
+#### Headers
 
 ```cpp
 #include <stdlib.h>
@@ -201,9 +185,9 @@ int main(int argc, char** argv, char** env){
 - `verilated.h` is the standard Verilator header
 - `verilated_vcd_c.h` is an additional Verilator header required to output VCD trace files
 - `Vcounter.h` is the header for our C++ model which Verilator will create from our Verilog module
-	- `counter` should be replaced with whatever the name of your module is
+  - `counter` should be replaced with whatever the name of your module is
 
-### Verilator Setup
+#### Verilator Setup
 
 ```cpp
 // Initialize verilated module
@@ -225,9 +209,10 @@ vcd->open("waveform.vcd");
 ```cpp
 int i = 0; // the timestep we are currently on
 ```
+
 In a Verilog testbench, it is common to use delay statements to create a clock signal, which is then used to drive the timing of the DUT. We'll still need to create the same clock signals, but we don't have the luxury of hardware parallelism that exists in RTL. Instead of creating an `always` block which runs this clock independently, we'll need to keep track of what timestep we are on, stored here as `i`, and update the clocks accordingly. Similarly, we will also use this to update our VCD file. Each increase in the timestep, or increment of `i`, can be though of as a `#1` delay being performed in a Verilog testbench.
 
-### Initialization
+#### Initialization
 
 ```cpp
 // Initialize inputs
@@ -237,7 +222,7 @@ dut->reset = 1;
 
 We want to set the values our inputs start at, so that we can ensure the same simulation behavior every time. More on this will come later.
 
-### Reset
+#### Reset
 
 Similarly, we want to start with a known state for all our internal signals by resetting our module.
 
@@ -257,22 +242,22 @@ Because we initialized `reset` high, our module enters reset immediately. The st
 
 At the next clock edge, we set `reset` low and `clk` high. `i` is then incremented, so that the next `dump()` will save to the next timestep.
 
-### Simulation
+#### Simulation
 
 ```cpp
 // Run simulation
 while(dut->count <= 0xF) {
-	printf("Count: %i\n", dut->count);
+    printf("Count: %i\n", dut->count);
 
-	dut->clk = 0;
-	dut->eval();
-	vcd->dump(i);
-	i++;
+    dut->clk = 0;
+    dut->eval();
+    vcd->dump(i);
+    i++;
 
-	dut->clk = 1;
-	dut->eval();
-	vcd->dump(i);
-	i++;
+    dut->clk = 1;
+    dut->eval();
+    vcd->dump(i);
+    i++;
 }
 
 dut->final();
@@ -282,7 +267,7 @@ The fun part! This simulation is running until our `count` output hits `0xF`, or
 
 The `dut->final()` command is run at the end to run any SystemVerilog `final` blocks. Our counter module does not have any, so in this case it won't do anything meaningful.
 
-### Cleanup
+#### Cleanup
 
 ```cpp
 // Cleanup
@@ -293,7 +278,7 @@ exit(EXIT_SUCCESS);
 
 Finally, we just need to close the VCD file we opened, clear the memory we allocated for `dut`, and exit our program with a successful error code!
 
-## Simulating
+### Simulating
 
 There are two steps required to simulate our SystemVerilog code with the C++ testbench we created: we need to "verilate" the RTL, or convert it to a C++ model, and we need to compile the testbench.
 

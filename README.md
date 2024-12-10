@@ -10,7 +10,7 @@ These tutorials are intended to be followed in the following order:
 
 1. [Verilator Introduction](/Introduction/README.md)
 2. [The OTTER MCU](/OTTER/README.md)
-3. 
+3. [VGA Simulation](/VGA/README.md)
 
 ## Building
 

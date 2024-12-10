@@ -6,7 +6,7 @@ Using Verilator, we can simply copy the contents of the VGA framebuffer out and 
 
 ## VGA Driver
 
-This tutorial utilizes the 320x240 framebuffer and VGA driver written by former students. See Dr. Andrew Danowitz or another professor teaching CPE 233/333 for a copy of this code. Other implementations written in VHDL may also be available, by Verilator is not currently compatible with that language.
+This tutorial utilizes the 320×240 framebuffer and VGA driver written by former students. See Dr. Andrew Danowitz or another professor teaching CPE 233/333 for a copy of this code. Other implementations written in VHDL may also be available, by Verilator is not currently compatible with that language.
 
 The following files should be added to your project:
 

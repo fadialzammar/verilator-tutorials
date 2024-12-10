@@ -1,6 +1,6 @@
-## Adding VGA to the OTTER
+# VGA Simulation with the OTTER
 
-Some projects utilizing the OTTER make sure of the VGA port on the Basys3 board. One of the biggest difficulties with this is the difficultly of debugging the video output. Simulating for long enough to get even a single frame takes a very long time, and often won't be very helpful as just a collection of signals. To really verify your code you typically need to go through the full synthesis, implementation, routing, and bitstream flows to load the design onto the FPGA and connect it to a real display.
+Some projects utilizing the OTTER make sure of the VGA port on the Basys3 board. One of the biggest difficulties with this is debugging the video output. Simulating for long enough to get even a single frame takes a very long time, and often won't be very helpful as just a collection of signals. To really verify your code you typically need to go through the full synthesis, implementation, routing, and bitstream flows to load the design onto the FPGA and connect it to a real display.
 
 Using Verilator, we can simply copy the contents of the VGA framebuffer out and process it into an image file. Simulating this way is extremely fast in comparison to Vivado's waveform simulation, and makes it super easy to see the actual image that will be drawn to the display.
 
@@ -9,6 +9,7 @@ Using Verilator, we can simply copy the contents of the VGA framebuffer out and 
 This tutorial utilizes the 320x240 framebuffer and VGA driver written by former students. See Dr. Andrew Danowitz or another professor teaching CPE 233/333 for a copy of this code. Other implementations written in VHDL may also be available, by Verilator is not currently compatible with that language.
 
 The following files should be added to your project:
+
 - `vga_driver_320x240.sv`
 - `vga_fb_driver_320x240.sv`
 
@@ -83,19 +84,17 @@ end
 
 Finally, uncomment the "VGA connector" section of the constraints file and map the appropriate signals to `VGA_RGB`, `VGA_HS`, and `VGA_VS`. The signal `VGA_RGB` is 8 bits in the order `RRRGGGBB`, so the least significant bit of the red and green, and two LSBs of the blue VGA signals can be left commented out.
 
-
 ### Framebuffer memory
 
 In the implementation we are working from, the 128KB framebuffer memory is implemented with a Xilinx IP block. This works in Vivado and is a reliable way to make sure the tools implement the memory in BRAM. Locked IPs such as this, however, are not compatible with Verilator. Instead, we can implement a simple, generic memory with the same port assignments as a drop-in replacement. This is included as [block_mem.sv](./block_mem.sv), and can be used with both Verilator and Vivado.
 
 ## Test Pattern Program
 
-A simple assembly program, [vga_color_shift.s](./vga_color_shift.s), is included to test the VGA functionality of our design. This example is assuming a 320x240 display, and as such begins writing at the 76,800th (320 * 240 = 76,800) address of the framebuffer. From there, it writes the last 8 bits of the address value to that address as the color value. This way, as we decrement through the valid addresses, the color will change as well, displaying a neat repeating pattern of 256 pixels in the output.
+A simple assembly program, [vga_color_shift.s](./vga_color_shift.s), is included to test the VGA functionality of our design. This example is assuming a 320×240 display, and as such begins writing at the 76,800th (320 × 240 = 76,800) address of the framebuffer. From there, it writes the last 8 bits of the address value to that address as the color value. This way, as we decrement through the valid addresses, the color will change as well, displaying a neat repeating pattern of 256 pixels in the output.
 
 ## Reading Out the Framebuffer
 
 In order to save the contents of the framebuffer, we will implement a similar strategy as before when we read out a register. After running the simulation for a sufficient number of clock cycles ([10,000,000 in my case](./vga_tb.cpp#l115)), we can read the framebuffer.
-
 
 ### Direct Writing
 
@@ -112,9 +111,9 @@ fclose(image);
 ```
 
 > [!WARNING]
-> If you are going to be simulating for extended periods of time, it is highly recommended to **disable** waveform writing during simulation. For a simulation running for several million cycles like this will, the trace can become several gigabytes in size. The easiest way to do this is by commenting out the line `vcd->dump(time);` from `tick()`. Alternatively, you can wrap all VCD-related parts of the testbench with a condition which checks an enviromnet variable, which can then be controlled by running our Makefile with `VCD=0 make`. Disabling trace writing will also make the simulation run much faster.
+> If you are going to be simulating for extended periods of time, it is highly recommended to **disable** waveform writing during simulation. For a simulation running for several million cycles like this will, the trace can become several gigabytes in size. The easiest way to do this is by commenting out the line `vcd->dump(time);` from `tick()`. Alternatively, you can wrap all VCD-related parts of the testbench with a condition which checks an environment variable, which can then be controlled by running our Makefile with `VCD=0 make`. Disabling trace writing will also make the simulation run much faster.
 
-After simulating with this in our testbech, an output file `vga_image.raw` will be created. Because this was just a raw stream of memory values, however, it is not stored in any particular image format, but can be opened in a [hex editor](https://marketplace.visualstudio.com/items?itemName=ms-vscode.hexeditor) to read the color values.
+After simulating with this in our testbench, an output file `vga_image.raw` will be created. Because this was just a raw stream of memory values, however, it is not stored in any particular image format, but can be opened in a [hex editor](https://marketplace.visualstudio.com/items?itemName=ms-vscode.hexeditor) to read the color values.
 
 ![Framebuffer raw values](./images/image_output_raw_hex.png)
 
@@ -132,7 +131,7 @@ Add `--LDFLAGS -lpng` to the `verilator` command to link the library when it com
 verilator -Wall --trace --exe --build -cc --Wno-fatal -Isrc --LDFLAGS -lpng
 ```
 
-We'll need to add these includes in our testbench:
+We'll need to add these `#includes` in our testbench:
 
 ```cpp
 #include <vector>
@@ -211,7 +210,7 @@ The main part of interest is the `for` loop where the actual writing happens. Ou
 }
 ```
 
-In the `main` function, after finishing the main simulation loop, we will need to copy the framebuffer's memory to a separate array. Instead of copying the entire array, we can stick to just the relevant entries in our 320x240 image. We were able to avoid this when doing a direct memory read in the prior section, but will need a contiguous array for the individual value reading our function does.
+In the `main` function, after finishing the main simulation loop, we will need to copy the framebuffer's memory to a separate array. Instead of copying the entire array, we can stick to just the relevant entries in our 320×240 image. We were able to avoid this when doing a direct memory read in the prior section, but will need a contiguous array for the individual value reading our function does.
 
 Then, we can pass this array to our function to write the image.
 
